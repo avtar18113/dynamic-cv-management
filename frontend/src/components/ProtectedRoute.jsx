@@ -1,14 +1,15 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const role = localStorage.getItem('role');
+const ProtectedRoute = ({ children, role }) => {
+  const { user } = useAuth();
 
-  if (!role || !allowedRoles.includes(role)) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return <Navigate to="/login" />;
+  if (role && user.role !== role) return <Navigate to="/" />;
 
   return children;
 };
 
 export default ProtectedRoute;
+

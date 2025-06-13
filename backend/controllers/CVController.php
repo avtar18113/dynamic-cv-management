@@ -61,15 +61,15 @@ function submitCV($pdo) {
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (empty($data['project_id']) || empty($data['form_data']) || !is_array($data['form_data'])) {
+    if (empty($data['project_id']) || empty($data['data']) || !is_array($data['data'])) {
         json_response(false, "Invalid data");
     }
 
     $project_id = $data['project_id'];
-   
-    $user_id=2; // For testing purposes, hardcoding user_id to 2
-    // $user_id = $_SESSION['user']['id']; // Uncomment this line for production use
-    $form_data = $data['form_data'];
+    $form_data = $data['data'];
+    $user_id = 6; // For testing purposes, hardcoding user_id to 2
+    // Uncomment this line for production use
+    // $user_id = $_SESSION['user']['id'];
 
     $cvModel = new CVSubmission($pdo);
 
@@ -86,16 +86,65 @@ function submitCV($pdo) {
     }
 }
 
-function downloadCVAsPDF($pdo) {
-    // require_login();
+function downloadbyManagerCVAsPDF($pdo) {
+    require_login();
 
-    // if ($_SESSION['user']['role'] !== 'user') {
-    //     json_response(false, "Only users can download their CV");
-    // }
+    if ($_SESSION['user']['role'] === 'user') {
+        json_response(false, "Only Admin & manager can download their CV");
+    }
+
+    $id = $_GET['id'] ?? null;
+    
+    if (!$id) {
+        json_response(false, "Submission ID required");
+    }
+
+    require_once __DIR__ . '/../models/CVSubmission.php';
+    require_once __DIR__ . '/../vendor/tecnickcom/tcpdf/tcpdf.php';
+
+    $cvModel = new CVSubmission($pdo);
+    $submission = $cvModel->getAllUserCV($id);
+
+    if (!$submission) {
+        json_response(false, "No CV found for this project");
+    }
+
+    $data = json_decode($submission['data'], true);
+    // print_r($data);
+   $project_id = $submission['project_id'];
+    // ✅ Fetch project name
+    $stmt = $pdo->prepare("SELECT name FROM projects WHERE id = ?");
+    $stmt->execute([$project_id]);
+    $project = $stmt->fetch(PDO::FETCH_ASSOC);
+    $project_name = $project ? $project['name'] : "Project $project_id";
+
+    // ✅ Generate PDF
+    $pdf = new TCPDF();
+    $pdf->AddPage();
+    $pdf->SetFont('helvetica', '', 12);
+    $pdf->Cell(0, 10, 'CV - Project ID: ' . $project_id, 0, 1);
+    $pdf->Cell(0, 10, "CV Submission - $project_name", 0, 1, 'C');
+    $pdf->Ln(5); // line break
+
+    $pdf->SetFont('helvetica', '', 12);
+    foreach ($data as $field => $value) {
+        $pdf->MultiCell(0, 10, "$field: $value", 0, 1);
+    }
+    $fullname = $data['full_name'] ?? 'N/A';
+
+    $pdf->Output("cv_$project_id"."_"."$fullname.pdf", 'D'); // 'I' = inline, 'D' = download
+}
+
+function downloadCVAsPDF($pdo) {
+    require_login();
+
+    if ($_SESSION['user']['role'] !== 'user') {
+        json_response(false, "Only users can download their CV");
+    }
 
     $project_id = $_GET['project_id'] ?? null;
     
-    $user_id=2; // For testing purposes, hardcoding user_id to 3
+    // $user_id=2; // For testing purposes, hardcoding user_id to 3
     // $user_id = $_SESSION['user']['id']; // Uncomment this line for production use
     if (!$project_id) {
         json_response(false, "Project ID required");
@@ -223,15 +272,15 @@ function register($pdo) {
 }
 
 function getAllCVs($pdo) {
-    // require_login();
-    // $role = $_SESSION['user']['role'];
-    // $user_id = $_SESSION['user']['id'];
+    require_login();
+    $role = $_SESSION['user']['role'];
+    $user_id = $_SESSION['user']['id'];
 
-    // if (!in_array($role, ['admin', 'manager'])) {
-    //     json_response(false, "Unauthorized");
-    // }
-    $role = 'manager';
-    $user_id = 3; // For testing purposes, hardcoding user_id to 3
+    if (!in_array($role, ['admin', 'manager'])) {
+        json_response(false, "Unauthorized");
+    }
+    // $role = 'manager';
+    // $user_id = 3; // For testing purposes, hardcoding user_id to 3
     // $user_id = $_SESSION['user']['id']; // Uncomment this line for production use    
 
     if ($role === 'manager') {
@@ -242,7 +291,7 @@ function getAllCVs($pdo) {
             JOIN users u ON u.id = cs.user_id
             JOIN projects p ON p.id = cs.project_id
             JOIN project_managers pm ON pm.project_id = cs.project_id
-            WHERE pm.manager_id = ?
+            WHERE u.role='user' AND pm.manager_id = ?
             ORDER BY cs.submitted_at DESC
         ");
         $stmt->execute([$user_id]);
@@ -252,7 +301,7 @@ function getAllCVs($pdo) {
             SELECT cs.id, cs.project_id, cs.user_id, u.name as user_name, u.email, cs.data, cs.submitted_at, p.name as project_name
             FROM cv_submissions cs
             JOIN users u ON u.id = cs.user_id
-            JOIN projects p ON p.id = cs.project_id
+            JOIN projects p ON p.id = cs.project_id WHERE u.role='user'
             ORDER BY cs.submitted_at DESC
         ");
     }

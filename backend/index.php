@@ -85,6 +85,10 @@ elseif (strpos($uri, '/api/cv/download/pdf') === 0 && $method === 'GET') {
     require 'controllers/CVController.php';
     downloadCVAsPDF($pdo);
 }
+elseif (strpos($uri, '/api/admincv/download/pdf') === 0 && $method === 'GET') {
+    require 'controllers/CVController.php';
+    downloadbyManagerCVAsPDF($pdo);
+}
 elseif (strpos($uri, '/api/cv/download/ppt') === 0 && $method === 'GET') {
     require 'controllers/CVController.php';
     downloadCVAsPPT($pdo);

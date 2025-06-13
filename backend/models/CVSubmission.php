@@ -21,4 +21,9 @@ class CVSubmission {
         $stmt->execute([$project_id, $user_id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+     public function getAllUserCV($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM cv_submissions WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }

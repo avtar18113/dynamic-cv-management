@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext'; // Uncomment if using AuthContext for login state
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errMsg, setErrMsg] = useState('');
   const navigate = useNavigate();
-
+  const { login } = useAuth();
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrMsg('');
@@ -18,13 +19,14 @@ const Login = () => {
         { email, password },
         { withCredentials: true }
       );
-
+      login(res.data.data);
       if (res.data.status) {
         const role = res.data.data.role;
         localStorage.setItem('role', role);
 
         if (role === 'admin') navigate('/admin/dashboard');
         else if (role === 'manager') navigate('/manager/dashboard');
+        else if (role === 'user') navigate('/project/:projectId/cv-form');
         else setErrMsg('Access denied: unknown role.');
       } else {
         setErrMsg(res.data.message);
