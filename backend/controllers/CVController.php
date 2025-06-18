@@ -12,70 +12,168 @@ use PhpOffice\PhpPresentation\PhpPresentation;
     use PhpOffice\PhpPresentation\Style\Fill;
 
 function addCVField($pdo) {
-    // require_login();
-    // if (!is_admin()) {
-    //     json_response(false, "Only admin can add fields");
-    // }
+    $input = json_decode(file_get_contents("php://input"), true);
 
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (empty($data['project_id']) || empty($data['field_name']) || empty($data['field_type'])) {
-        json_response(false, "Missing required field information");
+    if (!isset($input['project_id'])) {
+        json_response(false, 'Invalid input: project_id missing.');
+        return;
+    }
+    if (!is_array($input['fields'])) {
+        json_response(false, 'Invalid input:  fields missing.');
+        return;
     }
 
-    $fieldModel = new CVField($pdo);
-    $success = $fieldModel->create($data);
+    $project_id = $input['project_id'];
+    $fields = $input['fields'];
 
-    if ($success) {
-        json_response(true, "Field added");
-    } else {
-        json_response(false, "Error adding field");
+    try {
+        $pdo->beginTransaction();
+
+        // Optional: Delete existing fields for that project (if overwriting)
+        $stmtDelete = $pdo->prepare("DELETE FROM cv_fields WHERE project_id = ?");
+        $stmtDelete->execute([$project_id]);
+
+        // Prepare insert statement
+        $stmt = $pdo->prepare("
+            INSERT INTO cv_fields 
+            (project_id, field_name, field_type, is_required, min_length, max_length, `order`,`options`) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        foreach ($fields as $field) {
+            $stmt->execute([
+                $project_id,
+                $field['field_name'],
+                $field['field_type'],
+                $field['is_required'] ? 1 : 0,
+                $field['min_length'],
+                $field['max_length'],
+                $field['order'],
+                $field['options']
+                
+            ]);
+        }
+
+        $pdo->commit();
+        json_response(true, 'CV fields saved successfully.');
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        json_response(false, 'Failed to save fields: ' . $e->getMessage());
     }
 }
 
-function getCVFieldsByProject($pdo) {
-    // require_login();
 
-    $project_id = $_GET['project_id'] ?? null;
-    if (!$project_id) {
-        json_response(false, "Project ID is required");
+function getCVFieldsByProject($pdo)
+{
+    $projectId = $_GET['project_id'] ?? null;
+
+    if (!$projectId) {
+        json_response(false, "Missing project_id");
+        return;
     }
 
-    $fieldModel = new CVField($pdo);
-    $fields = $fieldModel->getByProject($project_id);
-    json_response(true, "Fields for project", $fields);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM cv_fields WHERE project_id = ? ORDER BY `order` ASC");
+        $stmt->execute([$projectId]);
+        $fields = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert options from comma string to array for dropdowns
+        foreach ($fields as &$field) {
+            if ($field['field_type'] === 'dropdown' && !empty($field['options'])) {
+                $field['options'] = array_map('trim', explode(',', $field['options']));
+            } else {
+                $field['options'] = []; // Ensure consistent structure
+            }
+        }
+
+        json_response(true, "Fields loaded", $fields);
+    } catch (Exception $e) {
+        json_response(false, "Failed to fetch fields: " . $e->getMessage());
+    }
 }
+
 
 
 
 function submitCV($pdo) {
-    // require_login();
+    require_login();
 
-    // if ($_SESSION['user']['role'] !== 'user') {
-    //     json_response(false, "Only users can submit CVs");
-    // }
+    if ($_SESSION['user']['role'] !== 'user') {
+        json_response(false, "Only users can submit CVs");
+    }
 
-    // if (!$_SESSION['user']['email_verified']) {
-    //     json_response(false, "Email not verified");
-    // }
+    if (!$_SESSION['user']['email_verified']) {
+        json_response(false, "Email not verified");
+    }
 
     $data = json_decode(file_get_contents("php://input"), true);
 
-    if (empty($data['project_id']) || empty($data['data']) || !is_array($data['data'])) {
-        json_response(false, "Invalid data");
+    // if (empty($data['project_id'])) {
+    //     json_response(false, "Missing project_id");
+    // }
+    // elseif (empty($data['data'])) {
+    //     json_response(false, "Empty data");
+    // }
+    // elseif ( !is_array($data['data'])) {
+    //     json_response(false, "Array  data Issue");
+    // }
+
+    if (empty($_POST['project_id'])) {
+        json_response(false, "Missing project_id");
     }
 
-    $project_id = $data['project_id'];
-    $form_data = $data['data'];
-    $user_id = 6; // For testing purposes, hardcoding user_id to 2
-    // Uncomment this line for production use
-    // $user_id = $_SESSION['user']['id'];
+    if (empty($_POST['form_data'])) {
+        json_response(false, "Empty form data");
+    }
+
+    $project_id = intval($_POST['project_id']);
+    $form_data_json = $_POST['form_data'];
+    $form_data = json_decode($form_data_json, true);
+
+     if (!is_array($form_data)) {
+        json_response(false, "Invalid form data format");
+    }
+
+    $user_id = $_SESSION['user']['id'];
 
     $cvModel = new CVSubmission($pdo);
 
     if ($cvModel->hasSubmitted($project_id, $user_id)) {
         json_response(false, "You have already submitted a CV for this project");
     }
+
+     // Optionally handle file upload
+    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+    $allowed_types = ['image/jpeg', 'image/jpg'];
+    $max_size = 2 * 1024 * 1024; // 10MB in bytes
+
+    $file_type = mime_content_type($_FILES['photo']['tmp_name']);
+    $file_size = $_FILES['photo']['size'];
+
+    if (!in_array($file_type, $allowed_types)) {
+        json_response(false, "Invalid file type. Only JPG/JPEG allowed.");
+    }
+
+    if ($file_size > $max_size) {
+        json_response(false, "File size exceeds 2MB limit.");
+    }
+
+    $uploads_dir = __DIR__ . '/../uploads/photos';
+    if (!is_dir($uploads_dir)) {
+        mkdir($uploads_dir, 0777, true);
+    }
+
+    $tmp_name = $_FILES['photo']['tmp_name'];
+    $filename = uniqid('photo_') . '_' . basename($_FILES['photo']['name']);
+    $target_path = "$uploads_dir/$filename";
+
+    if (move_uploaded_file($tmp_name, $target_path)) {
+        $form_data['photo_url'] = 'uploads/photos/' . $filename;
+    } else {
+        json_response(false, "File upload failed");
+    }
+}
+
 
     $success = $cvModel->submit($project_id, $user_id, $form_data);
 

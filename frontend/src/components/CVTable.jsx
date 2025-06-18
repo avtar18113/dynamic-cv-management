@@ -18,7 +18,7 @@ const CVTable = ({ cvs }) => {
   return (
     <>
     <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-300">
+    <table className="min-w-full divide-y divide-gray-300 w-100">
       <thead>
         <tr>
           <th scope="col" className="px-2 py-2 text-left text-xs font-medium text-black-500 uppercase tracking-wider">Project</th>
@@ -39,6 +39,7 @@ const CVTable = ({ cvs }) => {
             {fieldNames.map((key) => (
               <td className="px-2 py-2 whitespace-nowrap" key={key}>{cv.data[key]}</td>
             ))}
+            
             <td className="px-2 py-2 whitespace-nowrap">{new Date(cv.submitted_at).toLocaleString()}</td>
           </tr>
         ))}

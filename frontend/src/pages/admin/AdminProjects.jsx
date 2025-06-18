@@ -13,6 +13,9 @@ import {
 } from 'react-icons/fi';
 import Sidebar from '../../components/Sidebar';
 import Topbar from '../../components/Topbar';
+import toast from 'react-hot-toast';
+import AdminCreateProject from '../../components/AdminCreateProject';
+import FieldConfigModal from '../../components/FieldConfigModal';
 
 const AdminProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -20,38 +23,76 @@ const AdminProjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-    const role = 'admin';
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [showFieldModal, setShowFieldModal] = useState(false);
+  const role = 'admin';
   const projectsPerPage = 8;
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          'http://localhost/cv-portal/backend/api/project/list', 
-          { withCredentials: true }
-        );
-        if (res.data.status) setProjects(res.data.data);
-      } catch (err) {
-        console.error('Failed to load projects', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchProjects();
   }, []);
+
+  // Get All Project List
+   const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('http://localhost/cv-portal/backend/api/project/list', {
+        withCredentials: true
+      });
+      if (res.data.status) setProjects(res.data.data);
+    } catch (err) {
+      console.error('Failed to load projects', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
+  const handleEdit = (project) => {  
+    setEditData(project);
+    setShowModal(true);
+  };
+
+  const handleConfigureFields = (project) => {
+    setSelectedProject(project);
+    setShowFieldModal(true);
+  };
+
+   // Delete Project
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this project?')) return;
+    try {
+      const res = await axios.post(
+        'http://localhost/cv-portal/backend/api/project/delete',
+        { id },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
+      );
+
+      if (res.data.status) {
+        toast.success('Project deleted');
+        fetchProjects();
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch (err) {
+      toast.error('Delete failed');
+    }
+  };
+
   // Filter projects based on search term
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.slug.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination logic
+   // Pagination logic
   const indexOfLastProject = currentPage * projectsPerPage;
   const indexOfFirstProject = indexOfLastProject - projectsPerPage;
   const currentProjects = filteredProjects.slice(indexOfFirstProject, indexOfLastProject);
@@ -62,6 +103,9 @@ const AdminProjects = () => {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  const [editData, setEditData] = useState(null);
+  
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -77,39 +121,69 @@ const AdminProjects = () => {
               <p className="text-gray-600">View and manage all projects in the system</p>
             </div>
             
-            <button className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+            
+            
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
               <FiPlus className="mr-2" />
               Add New Project
             </button>
-          </div>
+          </div>  
+  {showModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl relative">
+      <button className="absolute top-2 right-2 text-gray-500 hover:text-red-600" onClick={() => { setShowModal(false); setEditData(null); }}>✕</button>
+
+      <AdminCreateProject
+      editData={editData}
+      onSuccess={(action) => {
+      toast.success(`Project ${action} successfully`);
+      setShowModal(false);
+      setEditData(null);
+      fetchProjects();}}/>
+    </div>
+  </div>
+)}
+
+{showFieldModal && selectedProject && (
+  <FieldConfigModal 
+  projectId={selectedProject.id} onClose={() => {
+      setShowFieldModal(false);
+      setSelectedProject(null);
+  }}/>
+)}
           
-          {/* Search and Filter Bar */}
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search projects..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <div className="flex space-x-2">
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-                  <FiFilter className="mr-2" />
-                  Filters
-                </button>
-                
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
-                  <FiDownload className="mr-2" />
-                  Export
-                </button>
-              </div>
-            </div>
-          </div>
+           
+
+{/* Search and Filter Bar */}
+<div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
+  <div className="flex flex-col md:flex-row gap-4">
+    <div className="relative flex-1">
+      <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search projects..."
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+    </div>
+    
+    <div className="flex space-x-2">
+      <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+        <FiFilter className="mr-2" />
+        Filters
+      </button>
+      
+      <button className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+        <FiDownload className="mr-2" />
+        Export
+      </button>
+    </div>
+  </div>
+</div>
           
           {/* Projects Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -168,12 +242,24 @@ const AdminProjects = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-2">
-                                <button className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50">
-                                  <FiEdit2 />
-                                </button>
-                                <button className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50">
-                                  <FiTrash2 />
-                                </button>
+                                <button
+  onClick={() => handleEdit(project)}
+  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+>
+  <FiEdit2 />
+</button>
+<button
+  onClick={() => handleDelete(project.id)}
+  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+>
+  <FiTrash2 />
+</button>
+<button
+  onClick={() => handleConfigureFields(project)}
+  className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
+>
+  ⚙️ Fields
+</button>
                               </div>
                             </td>
                           </tr>
@@ -259,6 +345,8 @@ const AdminProjects = () => {
               </>
             )}
           </div>
+
+          
         </main>
       </div>
     </div>

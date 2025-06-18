@@ -71,6 +71,8 @@ elseif ($uri === '/api/cv/field/add' && $method === 'POST') {
     require 'controllers/CVController.php';
     addCVField($pdo);
 }
+
+
 elseif (strpos($uri, '/api/cv/field/list') === 0 && $method === 'GET') {
     require 'controllers/CVController.php';
     getCVFieldsByProject($pdo);
@@ -111,7 +113,20 @@ elseif (strpos($uri, '/api/verify-email') === 0 && $method === 'GET') {
     require 'controllers/AuthController.php';
     verifyEmail($pdo);
 }
+elseif ($uri === '/api/project/public-list' && $method === 'GET') {
+    require 'controllers/ProjectController.php';
+    getPublicProjects($pdo);
+}
+elseif ($uri === '/api/project/delete' && $method === 'POST') {
+    require 'controllers/ProjectController.php';
+    deleteProject($pdo);
+}
+elseif ($uri === '/api/project/update' && $method === 'POST') {
+    require 'controllers/ProjectController.php';
+    updateProject($pdo);
+}
 
+// ✅ USER ROUTES
 // ✅ DEFAULT 404
 else {
     http_response_code(404);

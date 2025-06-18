@@ -2,16 +2,20 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-// import { useAuth } from '../contexts/AuthContext'; // Uncomment if using AuthContext for login state
+import toast from 'react-hot-toast';
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errMsg, setErrMsg] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrMsg('');
+    setLoading(true);
 
     try {
       const res = await axios.post(
@@ -19,21 +23,34 @@ const Login = () => {
         { email, password },
         { withCredentials: true }
       );
-      login(res.data.data);
-      if (res.data.status) {
-        const role = res.data.data.role;
-        localStorage.setItem('role', role);
 
-        if (role === 'admin') navigate('/admin/dashboard');
-        else if (role === 'manager') navigate('/manager/dashboard');
-        else if (role === 'user') navigate('/project/:projectId/cv-form');
-        else setErrMsg('Access denied: unknown role.');
+      if (res.data.status) {
+        const user = res.data.data;
+        login(user); // update context
+        localStorage.setItem('role', user.role);
+
+        toast.success('Login successful');
+
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (user.role === 'manager') {
+          navigate('/manager/dashboard');
+        } else if (user.role === 'user') {
+          // Optional: Route to last project or public project list
+          navigate('/');
+        } else {
+          setErrMsg('Access denied: unknown role.');
+        }
       } else {
         setErrMsg(res.data.message);
+        toast.error(res.data.message);
       }
     } catch (error) {
-        console.log("Axios error:", error);
-        setErrMsg('Login failed. Server error or invalid credentials.');
+      console.error("Axios error:", error);
+      toast.error('Login failed. Server error or invalid credentials.');
+      setErrMsg('Login failed. Server error or invalid credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,11 +80,15 @@ const Login = () => {
             />
           </div>
           {errMsg && <p className="text-red-600 text-sm">{errMsg}</p>}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md font-semibold hover:bg-blue-700 transition"
+            disabled={loading}
+            className={`w-full bg-blue-600 text-white font-semibold py-2 rounded-md transition ${
+              loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+            }`}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
