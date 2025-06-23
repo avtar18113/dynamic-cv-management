@@ -5,13 +5,33 @@ import toast from 'react-hot-toast';
 const AdminCreateProject = ({ editData = null, onSuccess }) => {
   const [form, setForm] = useState({
     id: '',
-  name: '',
-  slug: '',
-  logo_url: '',
-  header_image: '',
-  start_date: '',
-  end_date: ''
+    name: '',
+    slug: '',
+    logo_url: '',
+    header_image: '',
+    start_date: '',
+    end_date: '',
+    managers: [] // store selected manager IDs
   });
+
+  const [managerList, setManagerList] = useState([]);
+
+  useEffect(() => {
+    fetchManagers();
+  }, []);
+
+  const fetchManagers = async () => {
+    try {
+      const res = await axios.get('http://localhost/cv-portal/backend/api/manager/list', {
+        withCredentials: true
+      });
+      if (res.data.status) {
+        setManagerList(res.data.data);
+      }
+    } catch (err) {
+      toast.error('Failed to load managers');
+    }
+  };
 
   useEffect(() => {
     if (editData) {
@@ -22,24 +42,21 @@ const AdminCreateProject = ({ editData = null, onSuccess }) => {
         logo_url: editData.logo_url || '',
         header_image: editData.header_image || '',
         start_date: editData.start_date || '',
-        end_date: editData.end_date || ''
+        end_date: editData.end_date || '',
+        managers: editData.managers || []
       });
     } else {
-      // Reset form if adding new project
-      setForm({
-        id:'',
-        name: '',
-        slug: '',
-        logo_url: '',
-        header_image: '',
-        start_date: '',
-        end_date: ''
-      });
+      setForm(prev => ({ ...prev, managers: [] }));
     }
   }, [editData]);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleManagerSelect = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value));
+    setForm(prev => ({ ...prev, managers: selectedOptions }));
   };
 
   const handleSubmit = async (e) => {
@@ -50,7 +67,6 @@ const AdminCreateProject = ({ editData = null, onSuccess }) => {
       : 'http://localhost/cv-portal/backend/api/project/create';
 
     try {
-
       const res = await axios.post(endpoint, form, { withCredentials: true });
 
       if (res.data.status) {
@@ -109,6 +125,22 @@ const AdminCreateProject = ({ editData = null, onSuccess }) => {
             required
             className="w-full border px-3 py-2 rounded"
           />
+        </div>
+
+        <div>
+          <label className="block mb-1 font-medium">Assign Managers</label>
+          <select
+            multiple
+            value={form.managers}
+            onChange={handleManagerSelect}
+            className="w-full border px-3 py-2 rounded"
+          >
+            {managerList.map((manager) => (
+              <option key={manager.id} value={manager.id}>
+                {manager.name} ({manager.email})
+              </option>
+            ))}
+          </select>
         </div>
 
         <button

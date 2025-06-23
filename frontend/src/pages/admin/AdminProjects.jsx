@@ -16,6 +16,7 @@ import Topbar from '../../components/Topbar';
 import toast from 'react-hot-toast';
 import AdminCreateProject from '../../components/AdminCreateProject';
 import FieldConfigModal from '../../components/FieldConfigModal';
+import AssignManagerModal from './AssignManagerModal';
 
 const AdminProjects = () => {
   const [projects, setProjects] = useState([]);
@@ -26,6 +27,8 @@ const AdminProjects = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showFieldModal, setShowFieldModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [fetchAssignedManagers, setFetchAssignedManagers] = useState(null);
   const role = 'admin';
   const projectsPerPage = 8;
 
@@ -130,7 +133,16 @@ const AdminProjects = () => {
               <FiPlus className="mr-2" />
               Add New Project
             </button>
+            <button
+              onClick={() => setShowAssignModal(true)}
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <FiPlus className="mr-2" />
+              Assign Project
+            </button>
           </div>  
+          
+
   {showModal && (
   <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
     <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl relative">
@@ -155,7 +167,12 @@ const AdminProjects = () => {
   }}/>
 )}
           
-           
+  {showAssignModal && (
+  <AssignManagerModal
+    onClose={() => setShowAssignModal(false)}
+    onSuccess={() => fetchAssignedManagers?.()}
+  />
+)}         
 
 {/* Search and Filter Bar */}
 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">

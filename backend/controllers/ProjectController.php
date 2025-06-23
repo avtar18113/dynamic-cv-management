@@ -59,17 +59,17 @@ function updateProject($pdo) {
     if (empty($data['slug'])) {
         json_response(false, 'Missing slug fields');
     }
-    // if (empty($data['id']) || empty($data['name']) || empty($data['slug'])) {
-    //     json_response(false, 'Missing required fields');
-    // }
+    if (empty($data['managers'])) {
+        json_response(false, 'managers id is required');
+    }
 
     $stmt = $pdo->prepare("UPDATE projects SET 
         name = :name,
         slug = :slug,
-        logo_url = :logo_url,
-        header_image = :header_image,
+        logo_url = :logo_url,        
         start_date = :start_date,
         end_date = :end_date,
+        managers = :managers,
         updated_at = NOW()
         WHERE id = :id
     ");
@@ -79,7 +79,7 @@ function updateProject($pdo) {
         ':name' => $data['name'],
         ':slug' => $data['slug'],
         ':logo_url' => $data['logo_url'] ?? '',
-        ':header_image' => $data['header_image'] ?? '',
+        ':header_image' => $data['header_image'] ?? '',        
         ':start_date' => $data['start_date'] ?? null,
         ':end_date' => $data['end_date'] ?? null
     ]);
@@ -92,10 +92,10 @@ function updateProject($pdo) {
 }
 
 function listProjects($pdo) {
-    // require_login();
-    // if (!is_admin()) {
-    //     json_response(false, "Only admin can view all projects");
-    // }
+    require_login();
+    if (!is_admin()) {
+        json_response(false, "Only admin can view all projects");
+    }
 
     $projectModel = new Project($pdo);
     $projects = $projectModel->getAll();
@@ -103,11 +103,10 @@ function listProjects($pdo) {
     json_response(true, "Project list", $projects);
 }
 function assignManagerToProject($pdo) {
-    // require_login();
-    // if (!is_admin()) {
-    //     json_response(false, "Only admin can assign managers");
-    // }
-
+    require_login();
+    if (!is_admin()) {
+        json_response(false, "Only admin can assign managers");
+    }
     $data = json_decode(file_get_contents("php://input"), true);
     if (empty($data['project_id']) || empty($data['manager_id'])) {
         json_response(false, "Missing project_id or manager_id");
@@ -124,12 +123,12 @@ function assignManagerToProject($pdo) {
 }
 
 function getProjectsForManager($pdo) {
-    // require_login();
-    // if ($_SESSION['user']['role'] !== 'manager') {
-    //     json_response(false, "Only managers can access this");
-    // }
+    require_login();
+    if ($_SESSION['user']['role'] !== 'manager') {
+        json_response(false, "Only managers can access this");
+    }
 
-    // $managerId = $_SESSION['user']['id'];
+    $managerId = $_SESSION['user']['id'];
     $managerId=3;
     $stmt = $pdo->prepare("
         SELECT p.* FROM projects p

@@ -44,10 +44,8 @@ const Sidebar = ({ role, isOpen, toggleSidebar }) => {
       title: 'CV Management',
       icon: <FiFileText size={20} />,
       submenu: [
-        { title: 'All CVs', path: '/admin/cvs' },
-        { title: 'Pending Review', path: '/admin/cvs/pending' },
-        { title: 'Approved', path: '/admin/cvs/approved' },
-        { title: 'Rejected', path: '/admin/cvs/rejected' }
+        { title: 'All CVs', path: '/admin/cvs' }
+        
       ]
     },
     {
@@ -56,8 +54,7 @@ const Sidebar = ({ role, isOpen, toggleSidebar }) => {
       icon: <FiUsers size={20} />,
       submenu: [
         { title: 'All Users', path: '/admin/users' },
-        { title: 'Managers', path: '/admin/users/managers' },
-        { title: 'Add New', path: '/admin/users/add' }
+        { title: 'Managers', path: '/admin/users/managers' }
       ]
     },
     {

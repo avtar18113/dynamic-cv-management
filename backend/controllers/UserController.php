@@ -37,12 +37,14 @@ function listUsers($pdo) {
         json_response(false, "Only admin can view managers");
     }
 
-    $stmt = $pdo->prepare("SELECT id, name,email_verified, email,role FROM users");
+    $stmt = $pdo->prepare("SELECT id, name,email_verified, email, role FROM users");
     $stmt->execute();
     $managers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     json_response(true, "Manager list", $managers);
 }
+
+
 
 function deleteUser($pdo) {
     require_login();

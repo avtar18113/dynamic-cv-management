@@ -65,6 +65,11 @@ elseif ($uri === '/api/user/create' && $method === 'POST') {
     require 'controllers/UserController.php';
     createUser($pdo);
 }
+
+elseif ($uri === '/api/user/list' && $method === 'GET') {
+    require 'controllers/UserController.php';
+    listUsers($pdo);
+}
 elseif ($uri === '/api/user/delete' && $method === 'POST') {
     require 'controllers/UserController.php';
     deleteUser($pdo);
@@ -130,14 +135,10 @@ elseif ($uri === '/api/project/delete' && $method === 'POST') {
     deleteProject($pdo);
 }
 
-
 elseif ($uri === '/api/project/update' && $method === 'POST') {
     require 'controllers/ProjectController.php';
     updateProject($pdo);
 }
-
-// ✅ USER ROUTES
-// ✅ DEFAULT 404
 else {
     http_response_code(404);
     json_response(false, "Route not found: $uri");

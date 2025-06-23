@@ -15,7 +15,8 @@ import Register from './pages/Register';
 import PublicProjectList from './pages/PublicProjectList';
 import AdminCreateUser from './pages/admin/AdminCreateUser';
 import AdminUsers from './pages/admin/AdminUsers';
-
+import AssignManagerModal from './pages/admin/AssignManagerModal';
+import AdminManager from './pages/admin/AdminManager';
 function App() {
   return (
     <BrowserRouter>
@@ -27,6 +28,7 @@ function App() {
         <Route path="/admin/create-project" element={<AdminCreateProject />} />
         <Route path="/admin/cvs" element={<AdminProjectsCV />} />  
         <Route path="/register" element={<Register />} />
+        <Route path="/admin/assign-manager" element={<AssignManagerModal />} />
         <Route path="/admin/dashboard" element={
           <ProtectedRoute role="admin">
             <AdminDashboard />
@@ -42,6 +44,12 @@ function App() {
             <AdminUsers />
           </ProtectedRoute>
         } />
+        <Route path="/admin/users/managers" element={
+          <ProtectedRoute role="admin">
+            < AdminManager />
+          </ProtectedRoute>
+        } />
+       
         <Route
           path="/admin/projects"
           element={
