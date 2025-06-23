@@ -96,15 +96,15 @@ function getCVFieldsByProject($pdo)
 
 
 function submitCV($pdo) {
-    require_login();
+    // require_login();
 
-    if ($_SESSION['user']['role'] !== 'user') {
-        json_response(false, "Only users can submit CVs");
-    }
+    // if ($_SESSION['user']['role'] !== 'user') {
+    //     json_response(false, "Only users can submit CVs");
+    // }
 
-    if (!$_SESSION['user']['email_verified']) {
-        json_response(false, "Email not verified");
-    }
+    // if (!$_SESSION['user']['email_verified']) {
+    //     json_response(false, "Email not verified");
+    // }
 
     $data = json_decode(file_get_contents("php://input"), true);
 
@@ -134,8 +134,8 @@ function submitCV($pdo) {
         json_response(false, "Invalid form data format");
     }
 
-    $user_id = $_SESSION['user']['id'];
-
+    // $user_id = $_SESSION['user']['id'];
+$user_id=6;
     $cvModel = new CVSubmission($pdo);
 
     if ($cvModel->hasSubmitted($project_id, $user_id)) {
@@ -281,15 +281,15 @@ function downloadCVAsPDF($pdo) {
     $pdf->Output("cv_project_$project_id.pdf", 'I'); // 'I' = inline, 'D' = download
 }
 function downloadCVAsPPT($pdo) {
-    // require_login();
+    require_login();
 
-    // if ($_SESSION['user']['role'] !== 'user') {
-    //     json_response(false, "Only users can download their CV as PPT");
-    // }
+    if ($_SESSION['user']['role'] !== 'user') {
+        json_response(false, "Only users can download their CV as PPT");
+    }
 
     $project_id = $_GET['project_id'] ?? null;
     
-    $user_id=2; // For testing purposes, hardcoding user_id to 2
+    // $user_id=2; // For testing purposes, hardcoding user_id to 2
     // $user_id = $_SESSION['user']['id']; // Uncomment this line for production use
 
     if (!$project_id) {
@@ -414,15 +414,15 @@ function getAllCVs($pdo) {
     json_response(true, "CV Submissions", $cvs);
 }
 function exportCVsAsCSV($pdo) {
-    // require_login();
-    // $role = $_SESSION['user']['role'];
-    // $user_id = $_SESSION['user']['id'];
+    require_login();
+    $role = $_SESSION['user']['role'];
+    $user_id = $_SESSION['user']['id'];
 
-    // if (!in_array($role, ['admin', 'manager'])) {
-    //     json_response(false, "Unauthorized");
-    // }
-    $role = 'manager';
-    $user_id = 3; // For testing purposes, hardcoding user_id to 3
+    if (!in_array($role, ['admin', 'manager'])) {
+        json_response(false, "Unauthorized");
+    }
+    // $role = 'manager';
+    // $user_id = 3; // For testing purposes, hardcoding user_id to 3
     // Fetch CVs
     if ($role === 'manager') {
         $stmt = $pdo->prepare("

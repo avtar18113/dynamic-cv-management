@@ -3,10 +3,10 @@ require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../utils/auth.php';
 
 function createManager($pdo) {
-    // require_login();
-    // if (!is_admin()) {
-    //     json_response(false, "Only admin can create managers");
-    // }
+    require_login();
+    if (!is_admin()) {
+        json_response(false, "Only admin can create managers");
+    }
 
     $data = json_decode(file_get_contents("php://input"), true);
     if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
@@ -29,10 +29,10 @@ function createManager($pdo) {
 }
 
 function listManagers($pdo) {
-    // require_login();
-    // if (!is_admin()) {
-    //     json_response(false, "Only admin can view managers");
-    // }
+    require_login();
+    if (!is_admin()) {
+        json_response(false, "Only admin can view managers");
+    }
 
     $stmt = $pdo->prepare("SELECT id, name, email FROM users WHERE role = 'manager'");
     $stmt->execute();

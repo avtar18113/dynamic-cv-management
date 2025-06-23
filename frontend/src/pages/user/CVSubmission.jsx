@@ -125,6 +125,8 @@ const CVSubmission = () => {
             name={key}
             required={isRequired}
             value={formData[key] || ''}
+            minLength={field.min_length || 0}
+            maxLength={field.max_length || 255}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
           />
@@ -148,6 +150,7 @@ const CVSubmission = () => {
             type="file"
             name={key}
             required={isRequired}
+            accept="image/jpeg,image/jpg"
             onChange={(e) => setFormData((prev) => ({ ...prev, [key]: e.target.files[0] }))}
             className="w-full"
           />
@@ -160,6 +163,8 @@ const CVSubmission = () => {
             name={key}
             required={isRequired}
             value={formData[key] || ''}
+            minLength={field.min_length || 0}
+            maxLength={field.max_length || 255}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
           />

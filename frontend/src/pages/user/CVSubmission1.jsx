@@ -3,14 +3,13 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const CVSubmission1 = () => {
+const CVSubmission = () => {
   const { projectId } = useParams();
   const [fields, setFields] = useState([]);
   const [formData, setFormData] = useState({});
   const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch dynamic fields
   useEffect(() => {
     axios
       .get(`http://localhost/cv-portal/backend/api/cv/field/list?project_id=${projectId}`)
@@ -18,7 +17,7 @@ const CVSubmission1 = () => {
         if (res.data.status) {
           setFields(res.data.data);
           const initialData = {};
-          res.data.data.forEach(field => {
+          res.data.data.forEach((field) => {
             const key = field.field_name.toLowerCase().replace(/\s+/g, '_');
             initialData[key] = '';
           });
@@ -30,37 +29,30 @@ const CVSubmission1 = () => {
       .catch(() => toast.error('Server error loading fields'));
   }, [projectId]);
 
-  // Handle text field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle photo upload
   const handleFileChange = (e) => {
-  const file = e.target.files[0];
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (!file) return;
+    const validTypes = ['image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Only JPG or JPEG files are allowed.');
+      return;
+    }
 
-  // Validate type
-  const validTypes = ['image/jpeg', 'image/jpg'];
-  if (!validTypes.includes(file.type)) {
-    toast.error('Only JPG or JPEG files are allowed.');
-    return;
-  }
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size must be less than 2MB.');
+      return;
+    }
 
-  // Validate size (2MB = 2 * 1024 * 1024 bytes)
-  const maxSize = 2 * 1024 * 1024;
-  if (file.size > maxSize) {
-    toast.error('File size must be less than 2MB.');
-    return;
-  }
+    setPhoto(file);
+  };
 
-  setPhoto(file);
-};
-
-
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -94,6 +86,87 @@ const CVSubmission1 = () => {
     }
   };
 
+  const renderField = (field) => {
+    const key = field.field_name.toLowerCase().replace(/\s+/g, '_');
+    const isRequired = field.is_required === 1;
+
+    switch (field.field_type) {
+      case 'textarea':
+        return (
+          <textarea
+            name={key}
+            required={isRequired}
+            value={formData[key] || ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200"
+          />
+        );
+
+      case 'dropdown':
+        return (
+          <select
+            name={key}
+            required={isRequired}
+            value={formData[key] || ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          >
+            <option value="">Select...</option>
+            {Array.isArray(field.options) && field.options.map((opt, idx) => (
+              <option key={idx} value={opt}>{opt}</option>
+            ))}
+          </select>
+        );
+
+      case 'number':
+        return (
+          <input
+            type="number"
+            name={key}
+            required={isRequired}
+            value={formData[key] || ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          />
+        );
+
+      case 'date':
+        return (
+          <input
+            type="date"
+            name={key}
+            required={isRequired}
+            value={formData[key] || ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          />
+        );
+
+      case 'file':
+        return (
+          <input
+            type="file"
+            name={key}
+            required={isRequired}
+            onChange={(e) => setFormData((prev) => ({ ...prev, [key]: e.target.files[0] }))}
+            className="w-full"
+          />
+        );
+
+      default:
+        return (
+          <input
+            type="text"
+            name={key}
+            required={isRequired}
+            value={formData[key] || ''}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+          />
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
       <form
@@ -102,26 +175,16 @@ const CVSubmission1 = () => {
       >
         <h2 className="text-2xl font-bold mb-6 text-center">CV Submission Form</h2>
 
-        {fields.map(field => {
-          const key = field.field_name.toLowerCase().replace(/\s+/g, '_');
-          return (
-            <div key={field.id} className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {field.field_name}
-              </label>
-              <input
-                type={field.field_type || 'text'}
-                name={key}
-                required={field.is_required === 1}
-                value={formData[key] || ''}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200"
-              />
-            </div>
-          );
-        })}
+        {fields.map(field => (
+          <div key={field.id} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {field.field_name}
+            </label>
+            {renderField(field)}
+          </div>
+        ))}
 
-        {/* File upload field */}
+        {/* Photo Upload Preview */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Upload Photo</label>
           <input
@@ -155,4 +218,4 @@ const CVSubmission1 = () => {
   );
 };
 
-export default CVSubmission1;
+export default CVSubmission;

@@ -61,6 +61,14 @@ elseif ($uri === '/api/manager/list' && $method === 'GET') {
     require 'controllers/ManagerController.php';
     listManagers($pdo);
 }
+elseif ($uri === '/api/user/create' && $method === 'POST') {
+    require 'controllers/UserController.php';
+    createUser($pdo);
+}
+elseif ($uri === '/api/user/delete' && $method === 'POST') {
+    require 'controllers/UserController.php';
+    deleteUser($pdo);
+}
 elseif ($uri === '/api/manager/projects' && $method === 'GET') {
     require 'controllers/ProjectController.php';
     getProjectsForManager($pdo);
@@ -121,6 +129,8 @@ elseif ($uri === '/api/project/delete' && $method === 'POST') {
     require 'controllers/ProjectController.php';
     deleteProject($pdo);
 }
+
+
 elseif ($uri === '/api/project/update' && $method === 'POST') {
     require 'controllers/ProjectController.php';
     updateProject($pdo);

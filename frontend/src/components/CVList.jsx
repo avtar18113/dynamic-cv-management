@@ -87,7 +87,7 @@ const CVList = () => {
 
       {message && <p className="text-red-600">{message}</p>}
 
-      <div className="overflow-auto w-100">
+      <div className="overflow-auto">
         <table className="min-w-full border border-gray-200 text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>

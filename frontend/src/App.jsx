@@ -10,14 +10,11 @@ import ManagerCVs from './pages/manager/ManagerCVs';
 import CVSubmission from './pages/user/CVSubmission';
 import Home from './Home';
 import AdminCreateProject from './components/AdminCreateProject';
-
-import AdminProjectCV from './pages/admin/AdminProjectsCV';
-
+import AdminProjectsCV from './pages/admin/AdminProjectsCV';
 import Register from './pages/Register';
 import PublicProjectList from './pages/PublicProjectList';
-
-
-
+import AdminCreateUser from './pages/admin/AdminCreateUser';
+import AdminUsers from './pages/admin/AdminUsers';
 
 function App() {
   return (
@@ -28,14 +25,23 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/project/:projectId/cv-form" element={<CVSubmission />} />
         <Route path="/admin/create-project" element={<AdminCreateProject />} />
-        <Route path="/admin/cvs" element={<AdminProjectCV />} />  
+        <Route path="/admin/cvs" element={<AdminProjectsCV />} />  
         <Route path="/register" element={<Register />} />
         <Route path="/admin/dashboard" element={
           <ProtectedRoute role="admin">
             <AdminDashboard />
           </ProtectedRoute>
         } />
-
+        <Route path="/admin/users/add" element={
+          <ProtectedRoute role="admin">
+            <AdminCreateUser />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+          <ProtectedRoute role="admin">
+            <AdminUsers />
+          </ProtectedRoute>
+        } />
         <Route
           path="/admin/projects"
           element={
@@ -52,8 +58,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
-
         <Route path="/manager/dashboard" element={
           <ProtectedRoute role="manager">
             <ManagerDashboard />
@@ -71,5 +75,7 @@ function App() {
     </BrowserRouter>
   );
 }
-
 export default App;
+// 8918947587
+
+//159632
